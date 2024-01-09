@@ -296,7 +296,7 @@ object frmVendasView: TfrmVendasView
       ModalResult = 6
       NumGlyphs = 2
       TabOrder = 1
-      OnClick = btnInserirClick
+      OnClick = btnCancelarPedidoClick
     end
   end
   object FDMPedidoProduto: TFDMemTable

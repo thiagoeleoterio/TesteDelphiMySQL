@@ -26,6 +26,7 @@ type
 
     function InserirPedido(Pedido: TPedido): Boolean;
     function LocalizarPedidoPorID(IDPedido: Integer): TPedido;
+    function DeletarPedidoEProdutos(IDPedido: Integer): Boolean;
   end;
 
 implementation
@@ -75,13 +76,7 @@ var
   PedidoProduto: TPedidoProduto;
   QueryID: TFDQuery;
 begin
-  if FTransaction.Active then
-    FDQuery.Transaction := FTransaction
-  else
-  begin
-    IniciarTransacao;
-    FDQuery.Transaction := FTransaction;
-  end;
+  FDQuery.Transaction := FTransaction;
 
   FDQuery.SQL.Text :=
     'INSERT INTO pedido (data_emissao, id_cliente, valor_total) ' +
@@ -162,6 +157,25 @@ begin
   end;
 end;
 
+function TPedidoDAO.DeletarPedidoEProdutos(IDPedido: Integer): Boolean;
+begin
+  FDQuery.Transaction := FTransaction;
+
+  if not FPedidoProdutoDAO.DeletarProdutosPorPedido(IDPedido) then
+      raise Exception.Create('Erro ao deletar produtos associados ao pedido');
+
+  FDQuery.SQL.Text := 'DELETE FROM Pedido WHERE ID_Pedido = :IDPedido';
+  FDQuery.ParamByName('IDPedido').AsInteger := IDPedido;
+
+  try
+    FDQuery.ExecSQL;
+    CommitTransacao;
+    Result := True;
+  except
+    RollbackTransacao;
+    raise;
+  end;
+end;
 
 end.
 

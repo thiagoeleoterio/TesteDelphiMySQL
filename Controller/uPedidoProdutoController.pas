@@ -14,6 +14,7 @@ type
     destructor Destroy; override;
     procedure InserirPedidoProduto(PedidoProduto: TPedidoProduto);
     function LocalizarProdutosPorPedido(IDPedido: Integer): TObjectList<TPedidoProduto>;
+    function DeletarProdutosPorPedido(IDPedido: Integer): Boolean;
   end;
 
 implementation
@@ -23,6 +24,11 @@ implementation
 constructor TPedidoProdutoController.Create;
 begin
   FPedidoProdutoDAO := TPedidoProdutoDAO.Create;
+end;
+
+function TPedidoProdutoController.DeletarProdutosPorPedido(IDPedido: Integer): Boolean;
+begin
+  Result := FPedidoProdutoDAO.DeletarProdutosPorPedido(IDPedido)
 end;
 
 destructor TPedidoProdutoController.Destroy;

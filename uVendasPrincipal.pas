@@ -70,6 +70,7 @@ type
       Shift: TShiftState);
     procedure btnGravarClick(Sender: TObject);
     procedure btnCarregarPedidoClick(Sender: TObject);
+    procedure btnCancelarPedidoClick(Sender: TObject);
   private
     { Private declarations }
     FEditandoProduto: Integer;
@@ -85,6 +86,7 @@ type
     procedure ExcluirProdutoSelecionado;
     procedure GravarPedido;
     procedure CarregarPedido;
+    procedure CancelarPedido;
   public
     { Public declarations }
   end;
@@ -112,6 +114,11 @@ begin
   btnInserir.Caption := 'Inserir Produto';
 
   edtCodigo.Enabled := True;
+end;
+
+procedure TfrmVendasView.btnCancelarPedidoClick(Sender: TObject);
+begin
+  CancelarPedido;
 end;
 
 procedure TfrmVendasView.btnCarregarPedidoClick(Sender: TObject);
@@ -465,12 +472,48 @@ begin
   pnlTotalPedido.Caption := 'Total do Pedido: ' + FormatFloat('#,##0.00', TotalPedido);
 end;
 
+procedure TfrmVendasView.CancelarPedido;
+var
+  PedidoController: TPedidoController;
+  PedidoID: Integer;
+begin
+  PedidoID := 0;
+  PedidoController := TPedidoController.Create;
+  try
+    if InputBoxInt('Digite o ID do Pedido para Cancelar', 'ID do Pedido:', PedidoID) then
+    begin
+      if MessageDlg('Deseja deletar este pedido?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+      begin
+        if PedidoController.DeletarPedidoEProdutos(PedidoID) then
+        begin
+          ShowMessage('Pedido [' + IntToStr(PedidoID) + '] e seus produtos deletados com sucesso.');
+        end
+        else
+        begin
+          ShowMessage('Erro ao deletar pedido e produtos.');
+        end;
+      end
+      else
+      begin
+        ShowMessage('Pedido não encontrado.');
+      end;
+    end
+    else
+    begin
+      ShowMessage('ID de pedido inválido.');
+    end;
+  finally
+    PedidoController.Free;
+  end;
+end;
+
 procedure TfrmVendasView.CarregarPedido;
 var
   PedidoController: TPedidoController;
   PedidoID: Integer;
   Pedido: TPedido;
 begin
+  PedidoID := 0;
   PedidoController := TPedidoController.Create;
   try
     if InputBoxInt('Digite o ID do Pedido', 'ID do Pedido:', PedidoID) then
@@ -493,7 +536,7 @@ begin
             begin
               FDMPedidoProduto.Append;
               FDMPedidoProdutoidProduto.Value := PedidoProduto.IDProduto;
-              FDMPedidoProdutoDescricao.Value := PedidoProduto.Descricao;
+              FDMPedidoProdutoDescricao.AsString := PedidoProduto.Descricao;
               FDMPedidoProdutoQtd.Value := PedidoProduto.Quantidade;
               FDMPedidoProdutoValorUnitario.Value := PedidoProduto.ValorUnitario;
               FDMPedidoProdutoValorTotal.Value := PedidoProduto.ValorTotal;

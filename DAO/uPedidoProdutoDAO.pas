@@ -20,6 +20,7 @@ type
     destructor Destroy; override;
     function InserirPedidoProduto(PedidoProduto: TPedidoProduto): Boolean;
     function LocalizarProdutosPorPedido(IDPedido: Integer): TObjectList<TPedidoProduto>;
+    function DeletarProdutosPorPedido(IDPedido: Integer): Boolean;
   end;
 
 implementation
@@ -117,6 +118,18 @@ begin
   end;
 end;
 
+function TPedidoProdutoDAO.DeletarProdutosPorPedido(IDPedido: Integer): Boolean;
+begin
+  FDQuery.SQL.Text := 'DELETE FROM Pedido_Produtos WHERE ID_Pedido = :IDPedido';
+  FDQuery.ParamByName('IDPedido').AsInteger := IDPedido;
+  FDQuery.ExecSQL;
+  try
+    FDQuery.ExecSQL;
+    Result := True;
+  except
+    raise;
+  end;
+end;
 
 end.
 
