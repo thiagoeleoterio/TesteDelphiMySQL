@@ -88,9 +88,18 @@ CREATE TABLE IF NOT EXISTS `pedido` (
   `valor_total` decimal(18,2) DEFAULT NULL,
   PRIMARY KEY (`id_pedido`),
   KEY `idx_cliente_pedido` (`id_cliente`,`id_pedido`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Copiando dados para a tabela teste_delphi_mysql.pedido: ~0 rows (aproximadamente)
+-- Copiando dados para a tabela teste_delphi_mysql.pedido: ~8 rows (aproximadamente)
+INSERT INTO `pedido` (`id_pedido`, `data_emissao`, `id_cliente`, `valor_total`) VALUES
+	(1, '2024-01-09 15:11:59', 10, 1050.00),
+	(2, '2024-01-09 15:17:10', 36, 73.62),
+	(3, '2024-01-09 15:17:25', 36, 73.62),
+	(4, '2024-01-09 15:18:08', 36, 73.62),
+	(5, '2024-01-09 15:23:34', 10, 1200.00),
+	(6, '2024-01-09 15:23:49', 10, 1200.00),
+	(7, '2024-01-09 15:26:10', 10, 300.00),
+	(9, '2024-01-09 15:26:55', 10, 1700.00);
 
 -- Copiando estrutura para tabela teste_delphi_mysql.pedido_produtos
 CREATE TABLE IF NOT EXISTS `pedido_produtos` (
@@ -106,9 +115,23 @@ CREATE TABLE IF NOT EXISTS `pedido_produtos` (
   KEY `idx_id_produto` (`id_produto`),
   CONSTRAINT `FK_pedido` FOREIGN KEY (`id_pedido`) REFERENCES `pedido` (`id_pedido`),
   CONSTRAINT `FK_produto` FOREIGN KEY (`id_produto`) REFERENCES `produto` (`id_produto`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Copiando dados para a tabela teste_delphi_mysql.pedido_produtos: ~0 rows (aproximadamente)
+-- Copiando dados para a tabela teste_delphi_mysql.pedido_produtos: ~12 rows (aproximadamente)
+INSERT INTO `pedido_produtos` (`id_pedido_produtos`, `id_pedido`, `id_produto`, `quantidade`, `valor_unitario`, `valor_total`) VALUES
+	(1, 1, 20, 30, 35.00, 1050.00),
+	(2, 2, 10, 3, 15.55, 46.65),
+	(3, 2, 20, 3, 8.99, 26.97),
+	(4, 3, 10, 3, 15.55, 46.65),
+	(5, 3, 20, 3, 8.99, 26.97),
+	(6, 4, 10, 3, 15.55, 46.65),
+	(7, 4, 20, 3, 8.99, 26.97),
+	(8, 5, 20, 30, 40.00, 1200.00),
+	(9, 6, 20, 30, 40.00, 1200.00),
+	(10, 7, 20, 30, 10.00, 300.00),
+	(12, 9, 20, 25, 35.00, 875.00),
+	(13, 9, 15, 15, 20.00, 300.00),
+	(14, 9, 20, 35, 15.00, 525.00);
 
 -- Copiando estrutura para tabela teste_delphi_mysql.produto
 CREATE TABLE IF NOT EXISTS `produto` (
