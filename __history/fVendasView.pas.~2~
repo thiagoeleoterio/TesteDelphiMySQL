@@ -1,0 +1,144 @@
+unit fVendasView;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages,
+  System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Data.DB, Vcl.StdCtrls, Vcl.ExtCtrls,
+  Vcl.Grids, Vcl.DBGrids, Vcl.Mask,
+  uUtil, Vcl.Buttons,
+  uClienteModel,
+  UClienteController;
+
+type
+  TFVendas = class(TForm)
+    pnlTitulo: TPanel;
+    pnlAcoes: TPanel;
+    pnlDados: TPanel;
+    grdProdutos: TDBGrid;
+    pnlFinalizar: TPanel;
+    pnlTotalPedido: TPanel;
+    edtCodigo: TLabeledEdit;
+    edtQuantidade: TLabeledEdit;
+    edtValorUnitario: TLabeledEdit;
+    btnInserir: TBitBtn;
+    edtCodCliente: TLabeledEdit;
+    btnGravar: TBitBtn;
+    btnFechar: TBitBtn;
+    lblNomeCliente: TLabel;
+    procedure edtCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure edtQuantidadeExit(Sender: TObject);
+    procedure edtQuantidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure edtValorUnitarioKeyPress(Sender: TObject; var Key: Char);
+    procedure edtValorUnitarioExit(Sender: TObject);
+    procedure btnFecharClick(Sender: TObject);
+    procedure edtCodClienteKeyPress(Sender: TObject; var Key: Char);
+    procedure edtCodClienteExit(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FVendas: TFVendas;
+
+implementation
+
+{$R *.dfm}
+
+uses uClienteView;
+
+procedure TFVendas.btnFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TFVendas.edtCodigoKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, [#8, #13, '0'..'9']) then
+    key := #0;
+end;
+
+procedure TFVendas.edtQuantidadeExit(Sender: TObject);
+begin
+  edtQuantidade.Text := FormatarValor(edtQuantidade.Text);
+end;
+
+procedure TFVendas.edtQuantidadeKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #13, ',']) then
+    Key := #0
+  else
+  begin
+    if (Key = ',') and VerificarExisteCaractere(edtQuantidade.Text, ',') then
+      Key := #0;
+  end;
+end;
+
+procedure TFVendas.edtValorUnitarioExit(Sender: TObject);
+begin
+  edtValorUnitario.Text := FormatarValor(edtValorUnitario.Text);
+end;
+
+procedure TFVendas.edtValorUnitarioKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #13, ',']) then
+    Key := #0
+  else
+  begin
+    if (Key = ',') and VerificarExisteCaractere(edtValorUnitario.Text, ',') then
+      Key := #0;
+  end;
+end;
+
+procedure TFVendas.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  // Verificar se a tecla pressionada é a tecla Tab
+  if (Key = VK_TAB) and (ssShift in Shift) then
+  begin
+    // Simular a tecla Enter
+    Key := VK_RETURN;
+  end;
+end;
+
+procedure TFVendas.edtCodClienteExit(Sender: TObject);
+var
+  ClienteController: TClienteController;
+  Cliente: TCliente;
+  idCliente: Integer;
+begin
+  ClienteController := TClienteController.Create;
+  try
+    Cliente := ClienteController.ObterClientePorID(StrToIntDef(edtCodCliente.Text, 0));
+
+    if Assigned(Cliente) then
+      lblNomeCliente.Caption :=  'Cliente: ' + Cliente.Nome + ', Cidade: ' + Cliente.Cidade + ', UF: ' + Cliente.UF
+    else
+    begin
+      ShowMessage('Cliente não encontrado.');
+      lblNomeCliente.Caption := 'Nome do Cliente...';
+      frmClienteView.Abrir(idCliente);
+      if idCliente > -1 then
+      begin
+        Cliente := ClienteController.ObterClientePorID(idCliente);
+        if Assigned(Cliente) then
+          lblNomeCliente.Caption :=  'Cliente: ' + Cliente.Nome + ', Cidade: ' + Cliente.Cidade + ', UF: ' + Cliente.UF;
+      end;
+    end;
+  finally
+    FreeAndNil(ClienteController);
+  end;
+end;
+
+procedure TFVendas.edtCodClienteKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, [#8, #13, '0'..'9']) then
+    key := #0;
+end;
+
+end.

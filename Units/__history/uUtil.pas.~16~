@@ -1,0 +1,60 @@
+﻿unit uUtil;
+
+interface
+
+function RetornarSomenteNumeros(str : string) : string;
+function FormatarValor(str : string) : string;
+function ImpedirRepeticaoCaractere(const Str: string; Caractere: Char): string;
+
+implementation
+
+uses
+  System.SysUtils;
+
+function RetornarSomenteNumeros(str : string) : string;
+var
+    x : integer;
+begin
+  Result := '';
+  for x := 0 to Length(str) - 1 do
+    if (str.Chars[x] In ['0'..'9']) then
+      Result := Result + str.Chars[x];
+end;
+
+function FormatarValor(str : string) : string;
+begin
+  if Str = '' then
+    Str := '0';
+
+  try
+    Result := FormatFloat('#,##0.00', strtofloat(str));
+  except
+    Result := FormatFloat('#,##0.00', 0);
+  end;
+end;
+
+function ImpedirRepeticaoCaractere(const Str: string; Caractere: Char): string;
+var
+  I: Integer;
+  UltimoCaractere: Char;
+begin
+  Result := '';
+
+  // Percorre cada caractere na string
+  for I := 1 to Length(Str) do
+  begin
+    // Se o caractere atual for diferente do caractere desejado
+    if Str[I] <> Caractere then
+    begin
+      // Adiciona o caractere à string resultante apenas se for diferente do último
+      if Str[I] <> UltimoCaractere then
+        Result := Result + Str[I];
+
+      // Atualiza o último caractere
+      UltimoCaractere := Str[I];
+    end;
+  end;
+end;
+
+
+end.

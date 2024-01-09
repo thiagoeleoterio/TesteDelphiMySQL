@@ -1,0 +1,24 @@
+program Vendas;
+
+uses
+  Vcl.Forms,
+  uVendasView in 'uVendasView.pas' {frmVendasView},
+  uUtil in 'Units\uUtil.pas',
+  uClienteModel in 'Model\uClienteModel.pas',
+  uClienteController in 'Controller\uClienteController.pas',
+  uClienteDAO in 'DAO\uClienteDAO.pas',
+  udmConexao in 'DAO\udmConexao.pas' {DMConexao: TDataModule},
+  uClienteView in 'View\uClienteView.pas' {frmClienteView};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TfrmVendasView, frmVendasView);
+  Application.CreateForm(TDMConexao, DMConexao);
+  Application.CreateForm(TfrmClienteView, frmClienteView);
+  if not dmConexao.FDConnection.Connected then
+    Application.Terminate;
+  Application.Run;
+end.

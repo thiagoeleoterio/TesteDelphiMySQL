@@ -1,0 +1,46 @@
+unit uPedidoModel;
+
+interface
+
+type
+  TPedido = class
+  private
+    FIDPedido: Integer;
+    FDataEmissao: TDateTime;
+    FIDCliente: Integer;
+    FValorTotal: Double;
+  public
+    property IDPedido: Integer read FIDPedido write FIDPedido;
+    property DataEmissao: TDateTime read FDataEmissao write FDataEmissao;
+    property IDCliente: Integer read FIDCliente write FIDCliente;
+    property ValorTotal: Double read FValorTotal write FValorTotal;
+
+    constructor Create; overload;
+    constructor Create(const AIDPedido: Integer;
+                       const ADataEmissao: TDateTime;
+                       const AIDCliente: Integer;
+                       const AValorTotal: Double); overload;
+  end;
+
+implementation
+
+{ TPedido }
+
+constructor TPedido.Create;
+begin
+
+end;
+
+constructor TPedido.Create(const AIDPedido: Integer;
+                           const ADataEmissao: TDateTime;
+                           const AIDCliente: Integer;
+                           const AValorTotal: Double);
+begin
+  FIDPedido := AIDPedido;
+  FDataEmissao := ADataEmissao;
+  FIDCliente := AIDCliente;
+  FValorTotal := AValorTotal;
+end;
+
+end.
+

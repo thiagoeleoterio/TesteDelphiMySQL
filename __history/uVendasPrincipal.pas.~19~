@@ -1,0 +1,620 @@
+unit uVendasPrincipal;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages,
+  System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Data.DB, Vcl.StdCtrls, Vcl.ExtCtrls,
+  Vcl.Grids, Vcl.DBGrids, Vcl.Mask,
+  uUtil, Vcl.Buttons,
+  uClienteModel,
+  UClienteController, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf,
+  FireDAC.DApt.Intf, FireDAC.Comp.DataSet, FireDAC.Comp.Client, Vcl.DBCtrls,
+  uClienteView, uProdutoController, uProdutoModel, uProdutoView,
+  System.UITypes, System.Generics.Collections;
+
+type
+  TfrmVendasView = class(TForm)
+    pnlTitulo: TPanel;
+    pnlAcoes: TPanel;
+    pnlDados: TPanel;
+    grdProdutos: TDBGrid;
+    pnlFinalizar: TPanel;
+    pnlTotalPedido: TPanel;
+    edtCodigo: TLabeledEdit;
+    edtQuantidade: TLabeledEdit;
+    edtValorUnitario: TLabeledEdit;
+    btnInserir: TBitBtn;
+    edtCodCliente: TLabeledEdit;
+    btnGravar: TBitBtn;
+    btnFechar: TBitBtn;
+    lblNomeCliente: TLabel;
+    lblDescricaoProduto: TLabel;
+    FDMPedidoProduto: TFDMemTable;
+    dssPedidoProduto: TDataSource;
+    FDMPedidoProdutoidProduto: TIntegerField;
+    FDMPedidoProdutoDescricao: TStringField;
+    FDMPedidoProdutoQtd: TFloatField;
+    FDMPedidoProdutoValorUnitario: TFloatField;
+    FDMPedidoProdutoValorTotal: TFloatField;
+    FDMPedidoProdutoid: TAutoIncField;
+    pnlOperacoes: TPanel;
+    btnCarregarPedido: TBitBtn;
+    btnCancelarPedido: TBitBtn;
+    procedure edtCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure edtQuantidadeExit(Sender: TObject);
+    procedure edtQuantidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure edtValorUnitarioKeyPress(Sender: TObject; var Key: Char);
+    procedure edtValorUnitarioExit(Sender: TObject);
+    procedure btnFecharClick(Sender: TObject);
+    procedure edtCodClienteKeyPress(Sender: TObject; var Key: Char);
+    procedure edtCodClienteExit(Sender: TObject);
+    procedure edtCodigoExit(Sender: TObject);
+    procedure edtCodigoKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edtQuantidadeKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edtCodClienteKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure btnInserirClick(Sender: TObject);
+    procedure grdProdutosKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edtValorUnitarioKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure btnGravarClick(Sender: TObject);
+    procedure btnCarregarPedidoClick(Sender: TObject);
+  private
+    { Private declarations }
+    FEditandoProduto: Integer;
+    function PesquisarCliente: Integer;
+    procedure ResetarCliente;
+    function PesquisarProduto: Integer;
+    procedure ResetarProduto;
+    procedure InserirProdutoPedido;
+    procedure CalcularTotalPedido;
+    function RemoverFormatacao(const ValorFormatado: string): string;
+    procedure EditarProdutoPedido;
+    procedure AjustarControlesAposCRUD;
+    procedure ExcluirProdutoSelecionado;
+    procedure GravarPedido;
+    procedure CarregarPedido;
+  public
+    { Public declarations }
+  end;
+
+var
+  frmVendasView: TfrmVendasView;
+
+implementation
+
+uses
+  uPedidoController, uPedidoModel, uPedidoProdutoModel,
+  uPedidoProdutoController;
+
+{$R *.dfm}
+
+procedure TfrmVendasView.AjustarControlesAposCRUD;
+begin
+  edtCodigo.Clear;
+  ResetarProduto;
+  edtQuantidade.Clear;
+  edtValorUnitario.Clear;
+
+  CalcularTotalPedido;
+
+  btnInserir.Caption := 'Inserir Produto';
+
+  edtCodigo.Enabled := True;
+end;
+
+procedure TfrmVendasView.btnCarregarPedidoClick(Sender: TObject);
+begin
+  CarregarPedido;
+end;
+
+procedure TfrmVendasView.btnFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TfrmVendasView.btnGravarClick(Sender: TObject);
+begin
+  GravarPedido;
+end;
+
+procedure TfrmVendasView.edtCodigoExit(Sender: TObject);
+var
+  ProdutoController: TProdutoController;
+  Produto: TProduto;
+begin
+  if Length(edtCodigo.Text) > 0 then
+  begin
+    ProdutoController := TProdutoController.Create;
+    try
+      Produto := ProdutoController.LocalizarProdutoPorID(StrToIntDef(edtCodigo.Text, 0));
+
+      if Assigned(Produto) then
+        lblDescricaoProduto.Caption :=  'Produto: ' + Produto.Descricao
+      else
+      begin
+        ShowMessage('Produto não encontrado. Vamos pesquisar...');
+        Produto := ProdutoController.LocalizarProdutoPorID(PesquisarProduto);
+
+        if Assigned(Produto) then
+        begin
+          lblDescricaoProduto.Caption :=  'Produto: ' + Produto.Descricao;
+          edtCodigo.Text := IntToStr(Produto.IDProduto);
+        end
+        else
+          ResetarProduto;
+      end;
+    finally
+      FreeAndNil(ProdutoController);
+    end;
+  end
+  else
+    ResetarProduto;
+end;
+
+procedure TfrmVendasView.edtCodigoKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    edtQuantidade.SetFocus;
+    edtQuantidade.SelectAll;
+  end;
+end;
+
+procedure TfrmVendasView.edtCodigoKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, [#8, #13, '0'..'9']) then
+    key := #0;
+end;
+
+procedure TfrmVendasView.edtQuantidadeExit(Sender: TObject);
+begin
+  edtQuantidade.Text := FormatarValor(edtQuantidade.Text);
+end;
+
+procedure TfrmVendasView.edtQuantidadeKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    edtValorUnitario.SetFocus;
+    edtValorUnitario.SelectAll;
+  end;
+end;
+
+procedure TfrmVendasView.edtQuantidadeKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #13, ',']) then
+    Key := #0
+  else
+  begin
+    if (Key = ',') and VerificarExisteCaractere(edtQuantidade.Text, ',') then
+      Key := #0;
+  end;
+end;
+
+procedure TfrmVendasView.edtValorUnitarioExit(Sender: TObject);
+begin
+  edtValorUnitario.Text := FormatarValor(edtValorUnitario.Text);
+end;
+
+procedure TfrmVendasView.edtValorUnitarioKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Length(edtValorUnitario.Text) > 0 then
+  begin
+    if Key = VK_RETURN then
+      InserirProdutoPedido;
+  end;
+end;
+
+procedure TfrmVendasView.edtValorUnitarioKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #13, ',']) then
+    Key := #0
+  else
+  begin
+    if (Key = ',') and VerificarExisteCaractere(edtValorUnitario.Text, ',') then
+      Key := #0;
+  end;
+end;
+
+procedure TfrmVendasView.FormCreate(Sender: TObject);
+begin
+  FDMPedidoProduto.CreateDataSet;
+  FEditandoProduto := 0;
+end;
+
+procedure TfrmVendasView.FormDestroy(Sender: TObject);
+begin
+  FreeAndNil(FDMPedidoProduto);
+end;
+
+procedure TfrmVendasView.grdProdutosKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    EditarProdutoPedido;
+    Key := 0;
+  end;
+  if Key = VK_DELETE then
+  begin
+    ExcluirProdutoSelecionado;
+    Key := 0;
+  end;
+end;
+
+procedure TfrmVendasView.InserirProdutoPedido;
+var
+  IDProduto: Integer;
+  Qtd, ValorUnitario: Double;
+  ProdutoController: TProdutoController;
+  Produto: TProduto;
+begin
+  try
+    IDProduto := StrToIntDef(edtCodigo.Text, 0);
+    Qtd := StrToFloatDef(RemoverFormatacao(edtQuantidade.Text), 0);
+    ValorUnitario := StrToFloatDef(RemoverFormatacao(edtValorUnitario.Text), 0);
+
+    if (IDProduto = 0) or (Qtd = 0) or (ValorUnitario <= 0) then
+    begin
+      ShowMessage('Preencha corretamente os dados do produto.');
+      Exit;
+    end;
+
+    if FEditandoProduto > 0 then
+    begin
+      //Editar
+      if FDMPedidoProduto.Locate('Id',FEditandoProduto,[]) then
+      begin
+        ProdutoController := TProdutoController.Create;
+        try
+          Produto := ProdutoController.LocalizarProdutoPorID(IDProduto);
+
+          if Assigned(Produto) then
+          begin
+            FDMPedidoProduto.Edit;
+            FDMPedidoProduto.FieldByName('idProduto').AsInteger := Produto.IDProduto;
+            FDMPedidoProduto.FieldByName('descricao').AsString := Produto.Descricao;
+            FDMPedidoProduto.FieldByName('qtd').AsFloat := Qtd;
+            FDMPedidoProduto.FieldByName('valorUnitario').AsFloat := ValorUnitario;
+            FDMPedidoProduto.FieldByName('valorTotal').AsFloat := Qtd * ValorUnitario;
+            FDMPedidoProduto.Post;
+
+            AjustarControlesAposCRUD;
+
+            grdProdutos.SetFocus;
+          end
+          else
+          begin
+            ShowMessage('Produto não encontrado.');
+            ResetarProduto;
+          end;
+        finally
+          FreeAndNil(ProdutoController);
+        end;
+      end;
+
+      FEditandoProduto := 0;
+    end
+    else
+    begin
+      //Inserir
+      ProdutoController := TProdutoController.Create;
+      try
+        Produto := ProdutoController.LocalizarProdutoPorID(IDProduto);
+
+        if Assigned(Produto) then
+        begin
+          FDMPedidoProduto.Append;
+          FDMPedidoProduto.FieldByName('idProduto').AsInteger := Produto.IDProduto;
+          FDMPedidoProduto.FieldByName('descricao').AsString := Produto.Descricao;
+          FDMPedidoProduto.FieldByName('qtd').AsFloat := Qtd;
+          FDMPedidoProduto.FieldByName('valorUnitario').AsFloat := ValorUnitario;
+          FDMPedidoProduto.FieldByName('valorTotal').AsFloat := Qtd * ValorUnitario;
+          FDMPedidoProduto.Post;
+
+          AjustarControlesAposCRUD;
+
+          edtCodigo.SetFocus;
+        end
+        else
+        begin
+          ShowMessage('Produto não encontrado.');
+          ResetarProduto;
+        end;
+      finally
+        FreeAndNil(ProdutoController);
+      end;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Erro ao inserir o produto: ' + E.Message);
+  end;
+end;
+
+function TfrmVendasView.PesquisarCliente: Integer;
+begin
+  frmClienteView := TfrmClienteView.Create(nil);
+  try
+    frmClienteView.ShowModal;
+    Result := frmClienteView.ClienteEscolhido;
+  finally
+    FreeAndNil(frmClienteView);
+  end;
+end;
+
+function TfrmVendasView.PesquisarProduto: Integer;
+begin
+  frmProdutoView := TfrmProdutoView.Create(nil);
+  try
+    frmProdutoView.ShowModal;
+    Result := frmProdutoView.ProdutoEscolhido;
+  finally
+    FreeAndNil(frmProdutoView);
+  end;
+end;
+
+procedure TfrmVendasView.ResetarCliente;
+begin
+  lblNomeCliente.Caption := 'Cliente...';
+  edtCodCliente.Clear;
+end;
+
+procedure TfrmVendasView.ResetarProduto;
+begin
+  lblDescricaoProduto.Caption := 'Produto...';
+  edtCodigo.Clear;
+end;
+
+procedure TfrmVendasView.edtCodClienteExit(Sender: TObject);
+var
+  ClienteController: TClienteController;
+  Cliente: TCliente;
+begin
+  if Length(edtCodCliente.Text) > 0 then
+  begin
+    pnlOperacoes.Visible := False;
+    ClienteController := TClienteController.Create;
+    try
+      Cliente := ClienteController.ObterClientePorID(StrToIntDef(edtCodCliente.Text, 0));
+
+      if Assigned(Cliente) then
+        lblNomeCliente.Caption :=  'Cliente: ' + Cliente.Nome + ', Cidade: ' + Cliente.Cidade + ', UF: ' + Cliente.UF
+      else
+      begin
+        ShowMessage('Cliente não encontrado. Vamos pesquisar...');
+        Cliente := ClienteController.ObterClientePorID(PesquisarCliente);
+
+        if Assigned(Cliente) then
+        begin
+          lblNomeCliente.Caption :=  'Cliente: ' + Cliente.Nome + ', Cidade: ' + Cliente.Cidade + ', UF: ' + Cliente.UF;
+          edtCodCliente.Text := IntToStr(Cliente.IDCliente);
+        end
+        else
+        begin
+          ResetarCliente;
+          pnlOperacoes.Visible := True;
+        end;
+      end;
+    finally
+      FreeAndNil(ClienteController);
+    end;
+  end
+  else
+  begin
+    ResetarCliente;
+    pnlOperacoes.Visible := True;
+  end;
+end;
+
+procedure TfrmVendasView.edtCodClienteKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    edtCodigo.SetFocus;
+    edtCodigo.SelectAll;
+  end;
+end;
+
+procedure TfrmVendasView.edtCodClienteKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, [#8, #13, '0'..'9']) then
+    key := #0;
+end;
+
+procedure TfrmVendasView.btnInserirClick(Sender: TObject);
+begin
+  InserirProdutoPedido;
+end;
+
+procedure TfrmVendasView.CalcularTotalPedido;
+var
+  TotalPedido: Currency;
+begin
+  TotalPedido := 0;
+
+  FDMPedidoProduto.DisableControls;
+  FDMPedidoProduto.First;
+  while not FDMPedidoProduto.Eof do
+  begin
+    TotalPedido := TotalPedido + FDMPedidoProduto.FieldByName('valorTotal').AsFloat;
+    FDMPedidoProduto.Next;
+  end;
+  FDMPedidoProduto.EnableControls;
+
+  pnlTotalPedido.Caption := 'Total do Pedido: ' + FormatFloat('#,##0.00', TotalPedido);
+end;
+
+procedure TfrmVendasView.CarregarPedido;
+var
+  PedidoController: TPedidoController;
+  PedidoID: Integer;
+  Pedido: TPedido;
+begin
+  PedidoController := TPedidoController.Create;
+  try
+    if InputBoxInt('Digite o ID do Pedido', 'ID do Pedido:', PedidoID) then
+    begin
+      Pedido := PedidoController.LocalizarPedidoPorID(PedidoID);
+
+      if Assigned(Pedido) then
+      begin
+        pnlTitulo.Caption := pnlTitulo.Caption + ' Número Pedido: [' + IntToStr(Pedido.IDPedido) + ']' +
+                                                 ' Emissão: ' + DateToStr(Pedido.DataEmissao);
+        edtCodCliente.Text := Pedido.IDCliente.ToString;
+        pnlTotalPedido.Caption := 'Valor Total: ' + FormatFloat('#,##0.00', Pedido.ValorTotal);
+
+        if FDMPedidoProduto.Active then
+        begin
+          FDMPedidoProduto.EmptyDataSet;
+          if Pedido.PedidoProdutos.Count > 0 then
+          begin
+            for var PedidoProduto in Pedido.PedidoProdutos do
+            begin
+              FDMPedidoProduto.Append;
+              FDMPedidoProdutoidProduto.Value := PedidoProduto.IDProduto;
+              FDMPedidoProdutoDescricao.Value := PedidoProduto.Descricao;
+              FDMPedidoProdutoQtd.Value := PedidoProduto.Quantidade;
+              FDMPedidoProdutoValorUnitario.Value := PedidoProduto.ValorUnitario;
+              FDMPedidoProdutoValorTotal.Value := PedidoProduto.ValorTotal;
+              FDMPedidoProduto.Post;
+            end;
+          end
+          else
+          begin
+            ShowMessage('Nenhum produto encontrado para este pedido.');
+          end;
+        end
+      end
+      else
+      begin
+        ShowMessage('Pedido não encontrado.');
+      end;
+    end
+    else
+    begin
+      ShowMessage('ID de pedido inválido.');
+    end;
+  finally
+    PedidoController.Free;
+  end;
+end;
+
+function TfrmVendasView.RemoverFormatacao(const ValorFormatado: string): string;
+var
+  I: Integer;
+begin
+  Result := '';
+  for I := 1 to Length(ValorFormatado) do
+  begin
+    if CharInSet(ValorFormatado[I], ['0'..'9', ',']) then
+      Result := Result + ValorFormatado[I];
+  end;
+end;
+
+procedure TfrmVendasView.EditarProdutoPedido;
+begin
+  if FDMPedidoProduto.IsEmpty then
+    Exit;
+
+  edtCodigo.Text := FDMPedidoProduto.FieldByName('idProduto').AsString;
+  lblDescricaoProduto.Caption := FDMPedidoProduto.FieldByName('Descricao').AsString;
+  edtQuantidade.Text := FDMPedidoProduto.FieldByName('Qtd').AsString;
+  edtValorUnitario.Text := FormatFloat('#,##0.00', FDMPedidoProduto.FieldByName('ValorUnitario').AsFloat);
+
+  btnInserir.Caption := 'Atualizar Produto';
+
+  edtCodigo.Enabled := False;
+
+  edtQuantidade.SetFocus;
+  edtQuantidade.SelectAll;
+  FEditandoProduto := FDMPedidoProduto.FieldByName('id').AsInteger;
+end;
+
+procedure TfrmVendasView.ExcluirProdutoSelecionado;
+begin
+  if not FDMPedidoProduto.IsEmpty and (FEditandoProduto = 0) then
+  begin
+    if MessageDlg('Deseja realmente excluir o produto selecionado?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+    begin
+      FDMPedidoProduto.Delete;
+      CalcularTotalPedido;
+    end;
+
+  end;
+end;
+
+procedure TfrmVendasView.GravarPedido;
+var
+  PedidoController: TPedidoController;
+  Pedido: TPedido;
+  Produto: TPedidoProduto;
+begin
+  try
+    if FDMPedidoProduto.IsEmpty then
+    begin
+      ShowMessage('Adicione pelo menos um produto ao pedido.');
+      edtCodigo.SetFocus;
+      Exit;
+    end;
+
+    if StrToIntDef(edtCodCliente.Text, 0) = 0 then
+    begin
+      ShowMessage('Selecione um cliente para o pedido.');
+      edtCodCliente.SetFocus;
+      Exit;
+    end;
+
+    PedidoController := TPedidoController.Create;
+    try
+      Pedido := TPedido.Create;
+      Pedido.IDCliente := StrToInt(edtCodCliente.Text);
+      Pedido.DataEmissao := Now; //
+      Pedido.ValorTotal := StrToFloatDef(RemoverFormatacao(pnlTotalPedido.Caption), 0);
+
+      FDMPedidoProduto.DisableControls;
+      FDMPedidoProduto.First;
+      while not FDMPedidoProduto.Eof do
+      begin
+        Produto := Pedido.AddProduto;
+        Produto.IDProduto := FDMPedidoProduto.FieldByName('idProduto').AsInteger;
+        Produto.Quantidade := FDMPedidoProduto.FieldByName('Qtd').AsFloat;
+        Produto.ValorUnitario := FDMPedidoProduto.FieldByName('ValorUnitario').AsFloat;
+        Produto.ValorTotal := FDMPedidoProduto.FieldByName('ValorTotal').AsFloat;
+
+        FDMPedidoProduto.Next;
+      end;
+      FDMPedidoProduto.EnableControls;
+
+      PedidoController.InserirPedido(Pedido);
+
+      FDMPedidoProduto.EmptyDataSet;
+      AjustarControlesAposCRUD;
+      ResetarCliente;
+      CalcularTotalPedido;
+
+      ShowMessage('Pedido realizado com sucesso!');
+    finally
+      FreeAndNil(PedidoController);
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Erro ao Gravar o pedido: ' + E.Message);
+  end;
+end;
+
+end.

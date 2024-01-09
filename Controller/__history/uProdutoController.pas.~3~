@@ -1,0 +1,45 @@
+unit uProdutoController;
+
+interface
+
+uses
+  uProdutoDAO, uProdutoModel;
+
+type
+  TProdutoController = class
+  private
+    FProdutoDAO: TProdutoDAO;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure InserirProduto(Produto: TProduto);
+    function LocalizarProdutoPorID(IDProduto: Integer): TProduto;
+  end;
+
+implementation
+
+{ TProdutoController }
+
+constructor TProdutoController.Create;
+begin
+  FProdutoDAO := TProdutoDAO.Create;
+end;
+
+destructor TProdutoController.Destroy;
+begin
+  FProdutoDAO.Free;
+  inherited;
+end;
+
+procedure TProdutoController.InserirProduto(Produto: TProduto);
+begin
+  FProdutoDAO.InserirProduto(Produto);
+end;
+
+function TProdutoController.LocalizarProdutoPorID(IDProduto: Integer): TProduto;
+begin
+  Result := FProdutoDAO.LocalizarProdutoPorID(IDProduto);
+end;
+
+end.
+

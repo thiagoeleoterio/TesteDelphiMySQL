@@ -1,0 +1,108 @@
+unit uProdutoDAO;
+
+interface
+
+uses
+  uProdutoModel, FireDAC.Comp.Client, udmConexao, FireDAC.Stan.Param, System.SysUtils;
+
+type
+  TProdutoDAO = class
+  private
+    FTransaction: TFDTransaction;
+    function IniciarTransacao: TFDTransaction;
+    procedure CommitTransacao;
+    procedure RollbackTransacao;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure InserirProduto(Produto: TProdutoModel);
+    function LocalizarProdutoPorID(IDProduto: Integer): TProdutoModel;
+  end;
+
+implementation
+
+{ TProdutoDAO }
+
+constructor TProdutoDAO.Create;
+begin
+  FTransaction := IniciarTransacao;
+end;
+
+destructor TProdutoDAO.Destroy;
+begin
+  FTransaction.Free;
+  inherited;
+end;
+
+function TProdutoDAO.IniciarTransacao: TFDTransaction;
+begin
+  Result := TFDTransaction.Create(nil);
+  Result.Connection := dmConexao.FDConnection;
+  Result.StartTransaction;
+end;
+
+procedure TProdutoDAO.CommitTransacao;
+begin
+  FTransaction.Commit;
+end;
+
+procedure TProdutoDAO.RollbackTransacao;
+begin
+  FTransaction.Rollback;
+end;
+
+procedure TProdutoDAO.InserirProduto(Produto: TProdutoModel);
+var
+  FDQuery: TFDQuery;
+begin
+  FDQuery := TFDQuery.Create(nil);
+  try
+    FDQuery.Transaction := FTransaction;
+
+    FDQuery.SQL.Text :=
+      'INSERT INTO produto (descricao, preco_venda) VALUES (:Descricao, :PrecoVenda)';
+    FDQuery.ParamByName('Descricao').AsString := Produto.Descricao;
+    FDQuery.ParamByName('PrecoVenda').AsCurrency := Produto.PrecoVenda;
+
+    try
+      FDQuery.ExecSQL;
+
+      CommitTransacao;
+    except
+      RollbackTransacao;
+      raise;
+    end;
+
+  finally
+    FDQuery.Free;
+  end;
+end;
+
+function TProdutoDAO.LocalizarProdutoPorID(IDProduto: Integer): TProdutoModel;
+var
+  FDQuery: TFDQuery;
+begin
+  Result := nil;
+
+  FDQuery := TFDQuery.Create(nil);
+  try
+    FDQuery.SQL.Text :=
+      'SELECT id_produto, descricao, preco_venda FROM produto WHERE id_produto = :IDProduto';
+    FDQuery.ParamByName('IDProduto').AsInteger := IDProduto;
+
+    FDQuery.Open;
+
+    if not FDQuery.IsEmpty then
+    begin
+      Result := TProdutoModel.Create;
+      Result.IDProduto := FDQuery.FieldByName('id_produto').AsInteger;
+      Result.Descricao := FDQuery.FieldByName('descricao').AsString;
+      Result.PrecoVenda := FDQuery.FieldByName('preco_venda').AsCurrency;
+    end;
+  finally
+    FDQuery.Free;
+  end;
+end;
+
+end.
+

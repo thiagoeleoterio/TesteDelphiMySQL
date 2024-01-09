@@ -1,0 +1,134 @@
+unit uPedidoDAO;
+
+interface
+
+uses
+  uPedidoModel, FireDAC.Comp.Client, FireDAC.Stan.Param, udmConexao, System.SysUtils,
+  uPedidoProdutoModel, uPedidoProdutoDAO;
+
+type
+  TPedidoDAO = class
+  private
+    FTransaction: TFDTransaction;
+    FDQuery: TFDQuery;
+    FPedidoProdutoDAO: TPedidoProdutoDAO;
+
+    procedure IniciarQuery;
+    function IniciarTransacao: TFDTransaction;
+    procedure CommitTransacao;
+    procedure RollbackTransacao;
+
+    function InserirPedidoProduto(PedidoProduto: TPedidoProduto): Boolean;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function InserirPedido(Pedido: TPedido): Boolean;
+    function LocalizarPedidoPorID(IDPedido: Integer): TPedido;
+  end;
+
+implementation
+
+{ TPedidoDAO }
+
+constructor TPedidoDAO.Create;
+begin
+  FTransaction := IniciarTransacao;
+  IniciarQuery;
+  FPedidoProdutoDAO := TPedidoProdutoDAO.Create;
+end;
+
+destructor TPedidoDAO.Destroy;
+begin
+  FTransaction.Free;
+  FDQuery.Free;
+  FPedidoProdutoDAO.Free;
+  inherited;
+end;
+
+procedure TPedidoDAO.IniciarQuery;
+begin
+  FDQuery := TFDQuery.Create(nil);
+  FDQuery.Connection := dmConexao.FDConnection;
+end;
+
+function TPedidoDAO.IniciarTransacao: TFDTransaction;
+begin
+  Result := TFDTransaction.Create(nil);
+  Result.Connection := dmConexao.FDConnection;
+  Result.StartTransaction;
+end;
+
+procedure TPedidoDAO.CommitTransacao;
+begin
+  FTransaction.Commit;
+end;
+
+procedure TPedidoDAO.RollbackTransacao;
+begin
+  FTransaction.Rollback;
+end;
+
+function TPedidoDAO.InserirPedido(Pedido: TPedido): Boolean;
+var
+  PedidoProduto: TPedidoProduto;
+  QueryID: TFDQuery;
+begin
+  FDQuery.Transaction := FTransaction;
+
+  FDQuery.SQL.Text :=
+    'INSERT INTO pedido (data_emissao, id_cliente, valor_total) ' +
+    'VALUES (:DataEmissao, :IDCliente, :ValorTotal)';
+  FDQuery.ParamByName('DataEmissao').AsDateTime := Pedido.DataEmissao;
+  FDQuery.ParamByName('IDCliente').AsInteger := Pedido.IDCliente;
+  FDQuery.ParamByName('ValorTotal').AsCurrency := Pedido.ValorTotal;
+
+  try
+    FDQuery.ExecSQL;
+
+    QueryID := TFDQuery.Create(nil);
+    QueryID.Connection := dmConexao.FDConnection;
+    QueryID.SQL.Text := 'SELECT LAST_INSERT_ID() AS IDPedido';
+    QueryID.Open;
+
+    if not QueryID.IsEmpty then
+      Pedido.SetIDPedido(QueryID.FieldByName('IDPedido').AsInteger);
+
+    if Pedido.IDPedido > 0 then
+    begin
+      for PedidoProduto in Pedido.PedidoProdutos do
+      begin
+        PedidoProduto.IDPedido := Pedido.IDPedido;
+        if not InserirPedidoProduto(PedidoProduto) then
+        begin
+          RollbackTransacao;
+          Exit(False);
+        end;
+      end;
+
+      CommitTransacao;
+      Result := True;
+    end
+    else
+    begin
+      RollbackTransacao;
+      Result := False;
+    end;
+  except
+    RollbackTransacao;
+    raise;
+  end;
+end;
+
+function TPedidoDAO.InserirPedidoProduto(PedidoProduto: TPedidoProduto): Boolean;
+begin
+  Result := FPedidoProdutoDAO.InserirPedidoProduto(PedidoProduto);
+end;
+
+function TPedidoDAO.LocalizarPedidoPorID(IDPedido: Integer): TPedido;
+begin
+
+end;
+
+end.
+

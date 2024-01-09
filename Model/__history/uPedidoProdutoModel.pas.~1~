@@ -1,0 +1,47 @@
+unit uPedidoProdutoModel;
+
+interface
+
+type
+  TPedidoProduto = class
+  private
+    FIDPedidoProdutos: Integer;
+    FIDPedido: Integer;
+    FIDProduto: Integer;
+    FQuantidade: Integer;
+    FValorUnitario: Double;
+    FValorTotal: Double;
+  public
+    property IDPedidoProdutos: Integer read FIDPedidoProdutos write FIDPedidoProdutos;
+    property IDPedido: Integer read FIDPedido write FIDPedido;
+    property IDProduto: Integer read FIDProduto write FIDProduto;
+    property Quantidade: Integer read FQuantidade write FQuantidade;
+    property ValorUnitario: Double read FValorUnitario write FValorUnitario;
+    property ValorTotal: Double read FValorTotal write FValorTotal;
+
+    constructor Create; overload;
+    constructor Create(const AIDPedidoProdutos, AIDPedido, AIDProduto, AQuantidade: Integer;
+      const AValorUnitario, AValorTotal: Double); overload;
+  end;
+
+implementation
+
+{ TPedidoProduto }
+
+constructor TPedidoProduto.Create;
+begin
+end;
+
+constructor TPedidoProduto.Create(const AIDPedidoProdutos, AIDPedido, AIDProduto, AQuantidade: Integer;
+  const AValorUnitario, AValorTotal: Double);
+begin
+  FIDPedidoProdutos := AIDPedidoProdutos;
+  FIDPedido := AIDPedido;
+  FIDProduto := AIDProduto;
+  FQuantidade := AQuantidade;
+  FValorUnitario := AValorUnitario;
+  FValorTotal := AValorTotal;
+end;
+
+end.
+

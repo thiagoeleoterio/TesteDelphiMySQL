@@ -1,0 +1,48 @@
+unit uUtil;
+
+interface
+
+function RetornarSomenteNumeros(str : string) : string;
+function FormatarQuantidade(str : string) : string;
+function FormatarValor(str : string) : string;
+
+implementation
+
+uses
+  System.SysUtils;
+
+function RetornarSomenteNumeros(str : string) : string;
+var
+    x : integer;
+begin
+  Result := '';
+  for x := 0 to Length(str) - 1 do
+    if (str.Chars[x] In ['0'..'9']) then
+      Result := Result + str.Chars[x];
+end;
+
+function FormatarQuantidade(str : string) : string;
+begin
+  if Str = '' then
+    Str := '0';
+
+  try
+    Result := FormatFloat('#,##0', strtofloat(str) / 100);
+  except
+    Result := FormatFloat('#,##0', 0);
+  end;
+end;
+
+function FormatarValor(str : string) : string;
+begin
+    if Str = '' then
+        Str := '0';
+
+    try
+        Result := FormatFloat('R$ #,##0.00', strtofloat(str) / 100);
+    except
+        Result := FormatFloat('R$ #,##0.00', 0);
+    end;
+end;
+
+end.

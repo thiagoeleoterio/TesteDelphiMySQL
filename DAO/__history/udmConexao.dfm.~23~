@@ -1,0 +1,23 @@
+object dmConexao: TdmConexao
+  OnCreate = DataModuleCreate
+  Height = 480
+  Width = 640
+  object FDConnection: TFDConnection
+    Params.Strings = (
+      'Database=teste_delphi_mysql'
+      'User_Name=root'
+      'Password=1234'
+      'Server=localhost'
+      'DriverID=MySQL')
+    LoginPrompt = False
+    Left = 64
+    Top = 40
+  end
+  object FDPhysMySQLDriverLink: TFDPhysMySQLDriverLink
+    VendorLib = 
+      'C:\Users\Usuario\Documents\Embarcadero\Studio\Projects\TesteDelp' +
+      'hiMySQL\Win32\Debug\libmysql.dll'
+    Left = 192
+    Top = 40
+  end
+end

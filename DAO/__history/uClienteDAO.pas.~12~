@@ -1,0 +1,109 @@
+unit uClienteDAO;
+
+interface
+
+uses
+  uClienteModel,
+  FireDAC.Comp.Client,
+  udmConexao,
+  FireDAC.Stan.Param,
+  Data.DB,
+  FireDAC.DApt;
+
+type
+  TClienteDAO = class
+ private
+    FTransaction: TFDTransaction;
+    FDQuery: TFDQuery;
+    function IniciarTransacao: TFDTransaction;
+    procedure IniciarQuery;
+    procedure CommitTransacao;
+    procedure RollbackTransacao;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure InserirCliente(Cliente: TCliente);
+    function ObterClientePorID(IDCliente: Integer): TCliente;
+  end;
+
+var
+  dmConexao: TdmConexao;
+
+implementation
+
+constructor TClienteDAO.Create;
+begin
+  FTransaction := IniciarTransacao;
+  IniciarQuery;
+end;
+
+destructor TClienteDAO.Destroy;
+begin
+  FTransaction.Free;
+  FDQuery.Free;
+  inherited;
+end;
+
+procedure TClienteDAO.IniciarQuery;
+begin
+  FDQuery := TFDQuery.Create(nil);
+  FDQuery.Connection := dmConexao.FDConnection;
+end;
+
+function TClienteDAO.IniciarTransacao: TFDTransaction;
+begin
+  Result := TFDTransaction.Create(nil);
+  Result.Connection := dmConexao.FDConnection;
+  Result.StartTransaction;
+end;
+
+procedure TClienteDAO.CommitTransacao;
+begin
+  FTransaction.Commit;
+end;
+
+procedure TClienteDAO.RollbackTransacao;
+begin
+  FTransaction.Rollback;
+end;
+
+procedure TClienteDAO.InserirCliente(Cliente: TCliente);
+begin
+  FDQuery.Transaction := FTransaction;
+  FDQuery.SQL.Text :=
+    'INSERT INTO cliente (nome, cidade, uf) VALUES (:Nome, :Cidade, :UF)';
+  FDQuery.ParamByName('Nome').AsString := Cliente.Nome;
+  FDQuery.ParamByName('Cidade').AsString := Cliente.Cidade;
+  FDQuery.ParamByName('UF').AsString := Cliente.UF;
+
+  try
+    FDQuery.ExecSQL;
+
+    CommitTransacao;
+  except
+    RollbackTransacao;
+    raise;
+  end;
+end;
+
+function TClienteDAO.ObterClientePorID(IDCliente: Integer): TCliente;
+begin
+  Result := nil;
+  FDQuery.SQL.Text :=
+    'SELECT id_cliente, nome, cidade, uf FROM cliente WHERE id_cliente = :IDCliente';
+  FDQuery.ParamByName('IDCliente').AsInteger := IDCliente;
+
+  FDQuery.Open;
+
+  if not FDQuery.IsEmpty then
+  begin
+    Result := TCliente.Create;
+    Result.IDCliente := FDQuery.FieldByName('id_cliente').AsInteger;
+    Result.Nome := FDQuery.FieldByName('nome').AsString;
+    Result.Cidade := FDQuery.FieldByName('cidade').AsString;
+    Result.UF := FDQuery.FieldByName('uf').AsString;
+  end;
+end;
+
+end.
+

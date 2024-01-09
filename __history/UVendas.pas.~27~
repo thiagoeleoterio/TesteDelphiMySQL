@@ -1,0 +1,81 @@
+unit UVendas;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DB, Vcl.StdCtrls, Vcl.ExtCtrls,
+  Vcl.Grids, Vcl.DBGrids, Vcl.Mask, uUtil, Vcl.Buttons;
+
+type
+  TWFVendas = class(TForm)
+    pnlTitulo: TPanel;
+    pnlAcoes: TPanel;
+    pnlDados: TPanel;
+    grdProdutos: TDBGrid;
+    pnlFinalizar: TPanel;
+    pnlTotalPedido: TPanel;
+    edtCodigo: TLabeledEdit;
+    edtQuantidade: TLabeledEdit;
+    edtValorUnitario: TLabeledEdit;
+    btnInserir: TBitBtn;
+    LabeledEdit1: TLabeledEdit;
+    BitBtn1: TBitBtn;
+    BitBtn2: TBitBtn;
+    procedure edtCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure edtQuantidadeExit(Sender: TObject);
+    procedure edtQuantidadeKeyPress(Sender: TObject; var Key: Char);
+    procedure edtValorUnitarioKeyPress(Sender: TObject; var Key: Char);
+    procedure edtValorUnitarioExit(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  WFVendas: TWFVendas;
+
+implementation
+
+{$R *.dfm}
+
+procedure TWFVendas.edtCodigoKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, [#8, #13, '0'..'9']) then
+    key := #0;
+end;
+
+procedure TWFVendas.edtQuantidadeExit(Sender: TObject);
+begin
+  edtQuantidade.Text := FormatarValor(edtQuantidade.Text);
+end;
+
+procedure TWFVendas.edtQuantidadeKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #13, ',']) then
+    Key := #0
+  else
+  begin
+    if (Key = ',') and VerificarExisteCaractere(edtQuantidade.Text, ',') then
+      Key := #0;
+  end;
+end;
+
+procedure TWFVendas.edtValorUnitarioExit(Sender: TObject);
+begin
+  edtValorUnitario.Text := FormatarValor(edtValorUnitario.Text);
+end;
+
+procedure TWFVendas.edtValorUnitarioKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #13, ',']) then
+    Key := #0
+  else
+  begin
+    if (Key = ',') and VerificarExisteCaractere(edtValorUnitario.Text, ',') then
+      Key := #0;
+  end;
+end;
+
+end.
